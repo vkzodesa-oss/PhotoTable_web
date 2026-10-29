@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Фототаблиця (огляд останків)</title>
+  <meta name="theme-color" content="#1f4e79">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Фототаблиця">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="appbar">
+    <img src="icons/icon-192.png" alt="" class="logo" width="32" height="32">
+    <h1>Фототаблиця (огляд останків)</h1>
+    <button id="btnNew" class="icon-btn" type="button" aria-label="Нова фототаблиця" title="Нова фототаблиця">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <h2>Дані протоколу</h2>
+    <label class="field"><span>Місце дослідження (кожен рядок — окремий підкреслений рядок у шапці)</span>
+      <textarea id="place" rows="2" autocapitalize="sentences" placeholder="ДСУ «Одеське ОБ СМЕ»&#10;Центральне міжрайонне відділення №3"></textarea></label>
+    <label class="field"><span>№ тіла (останків)</span>
+      <input id="bodyNo" type="text" inputmode="numeric" autocomplete="off" placeholder="напр. 20260916010004067"></label>
+    <label class="field"><span>Дата дослідження</span>
+      <input id="date" type="date"></label>
+
+    <h2>Спеціалісти (<span id="spCount">2</span>)</h2>
+    <div id="specList"></div>
+    <button id="btnAddSpec" class="btn outline" type="button">+ Додати спеціаліста</button>
+
+    <h2>Фотографії (<span id="count">0</span>)</h2>
+    <input id="camInput" type="file" accept="image/*" capture="environment" hidden>
+    <input id="galInput" type="file" accept="image/*" multiple hidden>
+
+    <div id="photoList"></div>
+  </main>
+
+  <footer class="bottombar"><div class="bar-inner">
+    <div class="btn-row">
+      <button id="btnCamera" class="btn outline" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M9 3 7.2 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+        Зробити фото</button>
+      <button id="btnGallery" class="btn outline" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+        З галереї</button>
+    </div>
+    <button id="btnFinish" class="btn primary" type="button">Створити фототаблицю (Word)</button>
+  </div></footer>
+
+  <div id="overlay" class="overlay" hidden><div class="spinner"></div><p id="overlayText"></p></div>
+  <div id="modal" class="overlay" hidden><div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modalTitle"></h3><p id="modalText"></p><div id="modalBtns" class="modal-btns"></div></div></div>
+
+  <script src="docx.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
