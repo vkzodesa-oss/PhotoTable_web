@@ -1,0 +1,10 @@
+/ (корінь репозиторію)
+├── index.html
+├── style.css
+├── app.js
+├── docx.js
+├── sw.js
+├── manifest.webmanifest
+└── /icons
+    ├── icon-192.png
+    └── icon-512.png
