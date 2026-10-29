@@ -10,12 +10,80 @@
 </head>
 <body>
 <header class="appbar">
-  <!-- Вбудований векторний логотип -->
-  <svg class="logo-svg" viewBox="0 0 100 100" width="36" height="36">
-    <circle cx="50" cy="50" r="48" fill="#fff" stroke="#1f4e79" stroke-width="4"/>
-    <path d="M50 15 L55 35 L75 35 L60 48 L65 68 L50 55 L35 68 L40 48 L25 35 L45 35 Z" fill="#ffd700" stroke="#1f4e79" stroke-width="2"/>
-    <rect x="35" y="55" width="30" height="25" rx="3" fill="#1f4e79"/>
-    <text x="50" y="72" font-family="Arial" font-size="12" fill="#fff" text-anchor="middle" font-weight="bold">DNA</text>
+  <!-- Детальна емблема підрозділу криміналістичного забезпечення -->
+  <svg class="logo-svg" viewBox="0 0 200 200" width="44" height="44" aria-label="Логотип">
+    <!-- Зовнішнє срібне кільце (канат) -->
+    <circle cx="100" cy="100" r="96" fill="#c0c0c0" stroke="#888" stroke-width="2"/>
+    <circle cx="100" cy="100" r="92" fill="#1f4e79"/>
+    
+    <!-- Текст по колу: ПІДРОЗДІЛ КРИМІНАЛІСТИЧНОГО ЗАБЕЗПЕЧЕННЯ -->
+    <defs>
+      <path id="topArc" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>
+      <path id="bottomArc" d="M 35,105 A 65,65 0 0,0 165,105" fill="none"/>
+    </defs>
+    <text fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold" letter-spacing="1">
+      <textPath href="#topArc" startOffset="50%" text-anchor="middle">ПІДРОЗДІЛ КРИМІНАЛІСТИЧНОГО ЗАБЕЗПЕЧЕННЯ</textPath>
+    </text>
+    <text fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold" letter-spacing="1">
+      <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">UNIT OF FORENSIC SUPPORT</textPath>
+    </text>
+    
+    <!-- Внутрішнє біле кільце -->
+    <circle cx="100" cy="100" r="62" fill="#f5f5f5" stroke="#888" stroke-width="1"/>
+    
+    <!-- Центральний щит (синьо-жовтий) -->
+    <circle cx="100" cy="100" r="55" fill="#1f4e79" stroke="#ffd700" stroke-width="2"/>
+    
+    <!-- Хрест-поділ на 4 сектори -->
+    <line x1="100" y1="45" x2="100" y2="155" stroke="#c0c0c0" stroke-width="3"/>
+    <line x1="45" y1="100" x2="155" y2="100" stroke="#c0c0c0" stroke-width="3"/>
+    
+    <!-- Сектори -->
+    <path d="M 100,45 L 155,100 L 100,100 Z" fill="#ffd700"/>
+    <path d="M 100,45 L 45,100 L 100,100 Z" fill="#1f4e79"/>
+    <path d="M 45,100 L 100,155 L 100,100 Z" fill="#ffd700"/>
+    <path d="M 155,100 L 100,155 L 100,100 Z" fill="#1f4e79"/>
+    
+    <!-- Центральний тризуб -->
+    <g transform="translate(100,100)">
+      <path d="M 0,-18 L 0,12 M -10,-12 L -10,8 M 10,-12 L 10,8 M -10,-12 Q -10,-20 0,-22 Q 10,-20 10,-12 M -10,8 Q -10,18 0,20 Q 10,18 10,8" 
+            stroke="#ffd700" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Іконки в секторах -->
+    <!-- Книга (верхній лівий) -->
+    <g transform="translate(75,75)">
+      <rect x="-8" y="-6" width="16" height="12" fill="#fff" stroke="#333" stroke-width="0.8"/>
+      <line x1="0" y1="-6" x2="0" y2="6" stroke="#333" stroke-width="0.5"/>
+      <line x1="-6" y1="-3" x2="-2" y2="-3" stroke="#333" stroke-width="0.4"/>
+      <line x1="-6" y1="0" x2="-2" y2="0" stroke="#333" stroke-width="0.4"/>
+      <line x1="2" y1="-3" x2="6" y2="-3" stroke="#333" stroke-width="0.4"/>
+      <line x1="2" y1="0" x2="6" y2="0" stroke="#333" stroke-width="0.4"/>
+    </g>
+    
+    <!-- Камера (верхній правий) -->
+    <g transform="translate(125,75)">
+      <rect x="-10" y="-6" width="20" height="14" rx="2" fill="#333" stroke="#888" stroke-width="0.5"/>
+      <circle cx="0" cy="1" r="5" fill="#111" stroke="#666" stroke-width="0.8"/>
+      <circle cx="0" cy="1" r="2.5" fill="#446"/>
+      <rect x="-5" y="-9" width="10" height="4" rx="1" fill="#555"/>
+    </g>
+    
+    <!-- Відбиток пальця (нижній лівий) -->
+    <g transform="translate(75,125)">
+      <ellipse cx="0" cy="0" rx="8" ry="10" fill="none" stroke="#c0c0c0" stroke-width="1"/>
+      <ellipse cx="0" cy="0" rx="5" ry="7" fill="none" stroke="#c0c0c0" stroke-width="0.8"/>
+      <ellipse cx="0" cy="0" rx="2" ry="4" fill="none" stroke="#c0c0c0" stroke-width="0.6"/>
+    </g>
+    
+    <!-- ДНК (нижній правий) -->
+    <g transform="translate(125,125)">
+      <path d="M -6,-10 Q 6,-5 -6,0 Q 6,5 -6,10" stroke="#c0c0c0" stroke-width="1.2" fill="none"/>
+      <path d="M 6,-10 Q -6,-5 6,0 Q -6,5 6,10" stroke="#c0c0c0" stroke-width="1.2" fill="none"/>
+      <line x1="-4" y1="-7" x2="4" y2="-7" stroke="#c0c0c0" stroke-width="0.6"/>
+      <line x1="-4" y1="0" x2="4" y2="0" stroke="#c0c0c0" stroke-width="0.6"/>
+      <line x1="-4" y1="7" x2="4" y2="7" stroke="#c0c0c0" stroke-width="0.6"/>
+    </g>
   </svg>
   <h1>Огляд останків</h1>
   <button id="btnNew" class="icon-btn" aria-label="Нова таблиця">🔄</button>
@@ -40,7 +108,7 @@
     <h2>Фотографії (<span id="count">0</span>)</h2>
     <div class="btn-row">
       <button id="btnCamera" class="btn primary">📷 Камера</button>
-      <button id="btnGallery" class="btn outline">🖼️ Галерея</button>
+      <button id="btnGallery" class="btn outline">️ Галерея</button>
     </div>
     <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
     <input type="file" id="galInput" accept="image/*" multiple hidden>
@@ -52,7 +120,11 @@
   <button id="btnFinish" class="btn primary" disabled>💾 Згенерувати Фототаблицю</button>
 </div>
 
-<!-- Модальне вікно результатів -->
+<div id="overlay" class="overlay" hidden>
+  <div class="spinner"></div>
+  <div id="overlayText" style="margin-top:12px;"></div>
+</div>
+
 <div id="modal" class="overlay" hidden>
   <div class="modal">
     <h3 id="modalTitle"></h3>
