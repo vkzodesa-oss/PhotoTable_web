@@ -87,7 +87,7 @@
     var meta = {
       bodyNo: els.bodyNo.value, date: els.date.value,
       units: state.units.map(function (u) {
-        return { id: u.id, caption: u.caption, photoIds: u.photos.map(function (p) { return p.id; }) };
+        return { id: u.id, caption: u.caption, layout: u.layout || 'auto', photoIds: u.photos.map(function (p) { return p.id; }) };
       })
     };
     return dbReq('kv', 'readwrite', function (os) { return os.put(meta, 'draft'); }).catch(function () {});
@@ -375,6 +375,22 @@
       }
       if (pills.childNodes.length) card.appendChild(pills);
 
+      if (n > 1) {
+        var lf = el('label', 'field');
+        lf.appendChild(el('span', null, 'Розташування фото в групі'));
+        var sel = document.createElement('select');
+        [['auto', 'Разом (колаж, автоматично)'], ['row', 'В один ряд'], ['column', 'Стовпчиком']].forEach(function (o) {
+          var op = document.createElement('option');
+          op.value = o[0];
+          op.textContent = o[1];
+          sel.appendChild(op);
+        });
+        sel.value = u.layout || 'auto';
+        sel.addEventListener('change', function () { u.layout = sel.value; saveSoon(); });
+        lf.appendChild(sel);
+        card.appendChild(lf);
+      }
+
       var head = el('div', 'cap-head');
       head.appendChild(el('span', null, 'Підпис до фото №' + label));
       var chip = el('button', 'pill', 'Вставити № тіла');
@@ -444,6 +460,7 @@
       var units = state.units.map(function (u) {
         return {
           caption: u.caption,
+          layout: u.layout || 'auto',
           photos: u.photos.map(function (p) { return { bytes: new Uint8Array(p.buf), ext: 'jpeg', w: p.w, h: p.h }; })
         };
       });
@@ -521,7 +538,7 @@
       if (meta.date) els.date.value = meta.date;
       var list = meta.units || [];
       for (var i = 0; i < list.length; i++) {
-        var u = { id: list[i].id, caption: list[i].caption || '', photos: [] };
+        var u = { id: list[i].id, caption: list[i].caption || '', layout: list[i].layout || 'auto', photos: [] };
         var ids = list[i].photoIds || [];
         for (var k = 0; k < ids.length; k++) {
           var rec = null;

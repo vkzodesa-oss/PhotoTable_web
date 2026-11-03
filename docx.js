@@ -81,10 +81,9 @@
   }
   function emptyPara() { return para('', {}); }
 
-  function imagePara(id, rId, ext, cx, cy, o) {
-    return '<w:p><w:pPr><w:keepNext/>' + (o.pageBreak ? '<w:pageBreakBefore/>' : '') +
-      '<w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr>' +
-      '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
+  /* Одне зображення (inline) у вигляді run */
+  function drawingRun(id, rId, ext, cx, cy) {
+    return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
       '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
       '<wp:docPr id="' + id + '" name="Рисунок ' + id + '"/>' +
       '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
@@ -93,7 +92,14 @@
       '<pic:blipFill><a:blip r:embed="' + rId + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
       '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
       '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
-      '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+      '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+  }
+  var GAP_RUN = '<w:r><w:t xml:space="preserve">  </w:t></w:r>';   // проміжок між фото в ряду
+  /* Ряд фото: один абзац по центру, фото поруч одне з одним */
+  function imageRowPara(runs, o) {
+    return '<w:p><w:pPr><w:keepNext/>' + (o.pageBreak ? '<w:pageBreakBefore/>' : '') +
+      '<w:spacing w:after="0"' + (o.tight ? ' w:line="240" w:lineRule="auto"' : '') + '/><w:jc w:val="center"/></w:pPr>' +
+      runs.join(GAP_RUN) + '</w:p>';
   }
 
   /* ---------- OOXML: таблиці ---------- */
@@ -251,40 +257,84 @@
     return pages;
   }
 
-  /* Висоти (см) для кожного фото на сторінці */
-  function layoutHeights(page, isFirst, overhead0) {
+  var H_GAP_CM = 0.21;     // проміжок між фото в одному ряду (два пробіли)
+  var ROW_GAP_CM = 0.25;   // запас по висоті на ряд групи (спуск рядка)
+  var ROW_W_CM = TEXT_W_CM - 0.2;
+
+  function aspectOf(p) {
+    var w = p.w, h = p.h;
+    if (!(w > 0) || !(h > 0)) { w = 4; h = 3; }
+    return w / h;                                   // пропорції завжди з реальних розмірів фото
+  }
+  function compositions(n) {                        // усі способи розкласти n фото на послідовні ряди
+    var out = [];
+    (function rec(left, cur) {
+      if (left === 0) { out.push(cur.slice()); return; }
+      for (var k = 1; k <= left; k++) { cur.push(k); rec(left - k, cur); cur.pop(); }
+    })(n, []);
+    return out;
+  }
+
+  /* Групи: фото складаються разом рядами (колаж), висота підбирається під сторінку.
+     mode: 'auto' — найкращий колаж (не стовпчиком), 'row' — усі в один ряд, 'column' — стовпчиком. */
+  function groupRows(photos, availH, mode) {
+    var n = photos.length, asp = photos.map(aspectOf), cands, i;
+    if (mode === 'row') cands = [[n]];
+    else if (mode === 'column') cands = [photos.map(function () { return 1; })];
+    else if (n > 10) { var c0 = [], left = n; while (left > 0) { var k0 = Math.min(3, left); c0.push(k0); left -= k0; } cands = [c0]; }
+    else cands = compositions(n).filter(function (c) { return !c.every(function (k) { return k === 1; }); });
+    var best = null;
+    cands.forEach(function (c) {
+      var rows = [], idx = 0, sumH = 0;
+      c.forEach(function (k) {
+        var sumAsp = 0;
+        for (var j = 0; j < k; j++) sumAsp += asp[idx + j];
+        var wRow = ROW_W_CM - (k - 1) * H_GAP_CM;
+        var h = wRow / sumAsp;                      // ряд заповнює всю ширину
+        rows.push({ from: idx, k: k, h: h, wRow: wRow });
+        sumH += h; idx += k;
+      });
+      var s = Math.min(1, Math.max(0.05, (availH - rows.length * ROW_GAP_CM) / sumH));   // стискаємо під сторінку
+      var area = 0;
+      rows.forEach(function (r) { area += (s * r.h) * (s * r.wRow); });
+      if (!best || area > best.area + 1e-6 || (Math.abs(area - best.area) <= 1e-6 && rows.length < best.rows.length)) {
+        best = { area: area, s: s, rows: rows };
+      }
+    });
+    return best.rows.map(function (r) {
+      var h = r.h * best.s, idxs = [], ws = [];
+      for (var j = 0; j < r.k; j++) { idxs.push(r.from + j); ws.push(h * asp[r.from + j]); }
+      return { idxs: idxs, h: h };
+    });
+  }
+
+  /* Для кожного підпису на сторінці: ряди фото { idxs, h (см) } */
+  function layoutPage(page, isFirst, overhead0) {
     var overhead = isFirst ? overhead0 : 0;
     var us = page.units;
-    var nat = us.map(function (u) {
-      return u.photos.map(function (p) {
-        var w = p.w, h = p.h;
-        if (!(w > 0) || !(h > 0)) { w = 4; h = 3; }
-        return TEXT_W_CM * h / w;
-      });
-    });
-    if (us.length === 1 && us[0].photos.length > 1) {                    // група: фото одне під одним
+    var nat = us.map(function (u) { return u.photos.map(function (p) { return TEXT_W_CM / aspectOf(p); }); });
+    if (us.length === 1 && us[0].photos.length > 1) {                               // група
       var avail = PAGE_BODY_CM - overhead - countLines(us[0].captionFull) * LINE_CM - SPARE_CM;
-      var sum = nat[0].reduce(function (a, b) { return a + b; }, 0);
-      var s = Math.min(1, avail / sum);
-      return [nat[0].map(function (h) { return Math.max(2.5, h * s); })];
+      return [groupRows(us[0].photos, avail, us[0].layout || 'auto')];
     }
     var cap = us.map(function (u) { return countLines(u.captionFull) * LINE_CM; });
-    if (us.length === 1) {                                              // одне фото на сторінці
+    if (us.length === 1) {                                                           // одне фото на сторінці
       var av1 = PAGE_BODY_CM - overhead - cap[0] - SPARE_CM;
-      return [[Math.max(3, Math.min(nat[0][0], av1))]];
+      return [[{ idxs: [0], h: Math.max(3, Math.min(nat[0][0], av1)) }]];
     }
-    var av = PAGE_BODY_CM - overhead - cap[0] - cap[1] - LINE_CM - SPARE_CM;   // два фото + порожній рядок
+    var av = PAGE_BODY_CM - overhead - cap[0] - cap[1] - LINE_CM - SPARE_CM;         // два фото + порожній рядок
     var half = av / 2, a = nat[0][0], b = nat[1][0], ha, hb;
     if (a <= half) { ha = a; hb = Math.min(b, av - a); }
     else if (b <= half) { hb = b; ha = Math.min(a, av - b); }
     else { ha = half; hb = half; }
-    return [[Math.max(3, ha)], [Math.max(3, hb)]];
+    return [[{ idxs: [0], h: Math.max(3, ha) }], [{ idxs: [0], h: Math.max(3, hb) }]];
   }
 
-  function usedHeight(page, heights, isFirst, overhead0) {
+  function usedHeight(page, layout, isFirst, overhead0) {
     var h = isFirst ? overhead0 : 0;
     page.units.forEach(function (u, ui) {
-      heights[ui].forEach(function (x) { h += x; });
+      var tight = u.photos.length > 1;
+      layout[ui].forEach(function (row) { h += row.h + (tight ? ROW_GAP_CM : 0); });
       h += countLines(u.captionFull) * LINE_CM;
     });
     if (page.units.length > 1) h += LINE_CM * (page.units.length - 1);
@@ -314,19 +364,24 @@
 
     var rels = [], media = [], imgId = 0, textW = Math.round(TEXT_W_CM * CM), lastUsed = 0;
     pages.forEach(function (page, pi) {
-      var heights = layoutHeights(page, pi === 0, overhead0);
-      lastUsed = usedHeight(page, heights, pi === 0, overhead0);
+      var layout = layoutPage(page, pi === 0, overhead0);
+      lastUsed = usedHeight(page, layout, pi === 0, overhead0);
       page.units.forEach(function (u, ui) {
-        u.photos.forEach(function (p, k) {
-          imgId++;
-          var rId = 'rId' + (10 + imgId), fileName = 'image' + imgId + '.' + p.ext;
-          var w = p.w, h = p.h;
-          if (!(w > 0) || !(h > 0)) { w = 4; h = 3; }
-          var cy = Math.round(heights[ui][k] * CM), cx = Math.round(cy * w / h);
-          if (cx > textW) { cx = textW; cy = Math.round(cx * h / w); }
-          body.push(imagePara(imgId, rId, p.ext, cx, cy, { pageBreak: pi > 0 && ui === 0 && k === 0 }));
-          rels.push('<Relationship Id="' + rId + '" Type="' + REL + '/image" Target="media/' + fileName + '"/>');
-          media.push({ name: 'word/media/' + fileName, data: p.bytes });
+        var tight = u.photos.length > 1;
+        layout[ui].forEach(function (row, ri) {
+          var cy = Math.round(row.h * CM), runs = [];
+          row.idxs.forEach(function (k) {
+            var p = u.photos[k];
+            imgId++;
+            var rId = 'rId' + (10 + imgId), fileName = 'image' + imgId + '.' + p.ext;
+            var cx = Math.round(cy * aspectOf(p));            // ширина строго за пропорціями фото
+            var cyy = cy;
+            if (cx > textW) { cx = textW; cyy = Math.round(cx / aspectOf(p)); }
+            runs.push(drawingRun(imgId, rId, p.ext, cx, cyy));
+            rels.push('<Relationship Id="' + rId + '" Type="' + REL + '/image" Target="media/' + fileName + '"/>');
+            media.push({ name: 'word/media/' + fileName, data: p.bytes });
+          });
+          body.push(imageRowPara(runs, { pageBreak: pi > 0 && ui === 0 && ri === 0, tight: tight }));
         });
         body.push(para(run(u.captionFull), { align: 'center' }));
         if (ui < page.units.length - 1) body.push(emptyPara());
