@@ -177,36 +177,115 @@
   function photoUrl(buf) { return URL.createObjectURL(new Blob([buf], { type: 'image/jpeg' })); }
 
   /* Екран «Порядок фото»: торкайтесь фото в потрібному порядку. Повертає масив або null. */
+  /* Екран «Порядок фото»: великі превью (цілі фото), прокрутка, збільшення, вибір розміру сітки.
+     Повертає масив у вибраному порядку або null. */
   function chooseOrder(pending) {
     return new Promise(function (resolve) {
       var order = [];
-      var page = el('div', 'order-page');
-      var head = el('div', 'order-head');
-      var title = el('h3', null, 'Порядок фото');
-      var reset = el('button', 'link-btn', 'Скинути');
+      var cols = 2;
+      try { cols = parseInt(localStorage.getItem('orderCols'), 10) || 2; } catch (e) { cols = 2; }
+      if (cols < 1 || cols > 3) cols = 2;
+      var ZOOM_SVG = '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7H9v2H7v1h2v2h1v-2h2V9h-2V7z"/></svg>';
+
+      var page = document.createElement('div');
+      page.className = 'order-page';
+
+      var head = document.createElement('div');
+      head.className = 'order-head';
+      var title = document.createElement('h3');
+      title.textContent = 'Порядок фото';
+      var size = document.createElement('button');
+      size.type = 'button';
+      size.className = 'link-btn';
+      var reset = document.createElement('button');
       reset.type = 'button';
-      var hint = el('p', 'order-hint', 'Торкайтесь фото в тому порядку, у якому вони мають бути в таблиці. Повторне торкання скасовує вибір.');
-      var grid = el('div', 'order-grid');
+      reset.className = 'link-btn';
+      reset.textContent = 'Скинути';
+
+      var hint = document.createElement('p');
+      hint.className = 'order-hint';
+      hint.textContent = 'Торкайтесь фото в тому порядку, у якому вони мають бути в таблиці. Повторне торкання скасовує вибір. Лупа збільшує фото, кнопка «в ряд» змінює розмір.';
+
+      var grid = document.createElement('div');
+      grid.className = 'order-grid';
       var cells = [];
+
+      function toggle(i) {
+        var k = order.indexOf(i);
+        if (k >= 0) order.splice(k, 1); else order.push(i);
+        update();
+      }
+
+      /* повноекранний перегляд одного фото */
+      function openPreview(start) {
+        var idx = start;
+        var ov = document.createElement('div');
+        ov.className = 'order-preview';
+        var img = document.createElement('img');
+        img.alt = '';
+        var cap = document.createElement('div');
+        cap.className = 'order-preview-cap';
+        var bar = document.createElement('div');
+        bar.className = 'order-preview-bar';
+        var prev = document.createElement('button'); prev.type = 'button'; prev.className = 'btn outline'; prev.textContent = '‹ Назад';
+        var next = document.createElement('button'); next.type = 'button'; next.className = 'btn outline'; next.textContent = 'Далі ›';
+        var pick = document.createElement('button'); pick.type = 'button'; pick.className = 'btn primary';
+        var close = document.createElement('button'); close.type = 'button'; close.className = 'order-preview-close'; close.setAttribute('aria-label', 'Закрити'); close.textContent = '✕';
+        function show() {
+          img.src = pending[idx].url;
+          var k = order.indexOf(idx);
+          cap.textContent = 'Фото ' + (idx + 1) + ' з ' + pending.length + (k >= 0 ? '  ·  обрано під № ' + (k + 1) : '');
+          pick.textContent = k >= 0 ? 'Зняти вибір' : 'Обрати';
+          prev.disabled = idx === 0;
+          next.disabled = idx === pending.length - 1;
+        }
+        prev.addEventListener('click', function () { if (idx > 0) { idx--; show(); } });
+        next.addEventListener('click', function () { if (idx < pending.length - 1) { idx++; show(); } });
+        pick.addEventListener('click', function () { toggle(idx); show(); });
+        close.addEventListener('click', function () { if (ov.parentNode) ov.parentNode.removeChild(ov); });
+        bar.appendChild(prev); bar.appendChild(pick); bar.appendChild(next);
+        ov.appendChild(close); ov.appendChild(img); ov.appendChild(cap); ov.appendChild(bar);
+        page.appendChild(ov);
+        show();
+      }
+
       pending.forEach(function (p, i) {
-        var cell = el('button', 'order-cell');
-        cell.type = 'button';
+        var cell = document.createElement('div');
+        cell.className = 'order-cell';
+        cell.setAttribute('role', 'button');
+        cell.tabIndex = 0;
         var im = document.createElement('img');
-        im.src = p.url; im.alt = '';
-        var badge = el('span', 'order-badge');
-        cell.appendChild(im); cell.appendChild(badge);
-        cell.addEventListener('click', function () {
-          var k = order.indexOf(i);
-          if (k >= 0) order.splice(k, 1); else order.push(i);
-          update();
-        });
+        im.src = p.url;
+        im.alt = '';
+        var badge = document.createElement('span');
+        badge.className = 'order-badge';
+        var num = document.createElement('span');
+        num.className = 'order-num';
+        num.textContent = String(i + 1);
+        var zoom = document.createElement('button');
+        zoom.type = 'button';
+        zoom.className = 'order-zoom';
+        zoom.setAttribute('aria-label', 'Збільшити');
+        zoom.innerHTML = ZOOM_SVG;
+        zoom.addEventListener('click', function (e) { e.stopPropagation(); openPreview(i); });
+        cell.addEventListener('click', function () { toggle(i); });
+        cell.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(i); } });
+        cell.appendChild(im); cell.appendChild(badge); cell.appendChild(num); cell.appendChild(zoom);
         grid.appendChild(cell);
         cells.push({ cell: cell, badge: badge });
       });
-      var foot = el('div', 'order-foot');
-      var ok = el('button', 'btn primary');
+
+      var foot = document.createElement('div');
+      foot.className = 'order-foot';
+      var ok = document.createElement('button');
       ok.type = 'button';
+      ok.className = 'btn primary';
       foot.appendChild(ok);
+
+      function applyCols() {
+        grid.style.setProperty('--cols', String(cols));
+        size.textContent = cols === 1 ? '1 в ряд' : cols + ' в ряд';
+      }
       function update() {
         cells.forEach(function (c, i) {
           var k = order.indexOf(i);
@@ -216,18 +295,33 @@
         ok.textContent = 'Додати (' + order.length + ' з ' + pending.length + ' обрано)';
         reset.disabled = !order.length;
       }
-      function done(result) { if (page.parentNode) page.parentNode.removeChild(page); resolve(result); }
+      function done(result) {
+        if (page.parentNode) page.parentNode.removeChild(page);
+        resolve(result);
+      }
+
       head.appendChild(iconBtn(ICON_CLOSE, 'Скасувати', false, function () { done(null); }));
       head.appendChild(title);
+      head.appendChild(size);
       head.appendChild(reset);
+      size.addEventListener('click', function () {
+        cols = cols === 2 ? 1 : (cols === 1 ? 3 : 2);
+        try { localStorage.setItem('orderCols', String(cols)); } catch (e) { /* ignore */ }
+        applyCols();
+      });
       reset.addEventListener('click', function () { order = []; update(); });
       ok.addEventListener('click', function () {
         var rest = [];
         pending.forEach(function (_, i) { if (order.indexOf(i) < 0) rest.push(i); });
         done(order.concat(rest).map(function (i) { return pending[i]; }));
       });
-      page.appendChild(head); page.appendChild(hint); page.appendChild(grid); page.appendChild(foot);
+
+      page.appendChild(head);
+      page.appendChild(hint);
+      page.appendChild(grid);
+      page.appendChild(foot);
       document.body.appendChild(page);
+      applyCols();
       update();
     });
   }

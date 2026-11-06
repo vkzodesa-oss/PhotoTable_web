@@ -1,5 +1,5 @@
 /* Service worker: працює без інтернету. Онлайн завжди бере свіжі файли, офлайн — з кешу. */
-const CACHE = 'remains-table-v4';
+const CACHE = 'remains-table-v5';
 const SHELL = [
   './', './index.html', './style.css', './app.js', './docx.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon.png', './icons/logo.png'
